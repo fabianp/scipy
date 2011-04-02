@@ -281,3 +281,72 @@ def rq(a, overwrite_a=False, lwork=None, mode='full'):
         raise ValueError("illegal value in %d-th argument of internal orgrq"
                                                                     % -info)
     return R, Q
+
+
+def qr_mul(a, b, mode='full', overwrite_a=False, overwrite_b=False, lwork=None):
+    """Multiply q.T by b, where q comes from the QR decomposition of matrix a.
+
+    Parameters
+    ----------
+    a : array, shape (M, N)
+
+    b : array, shape (M, P)
+
+    mode : 'full' | 'economic'
+
+    lwork : integer
+        Work array size, lwork >= a.shape[1]. If None or -1, an optimal size
+        is computed.
+
+    overwrite_a : boolean
+        Whether data in a is overwritten (may improve performance)
+
+    overwrite_b : boolean
+        Whether data in b is overwritten (may improve performance)
+
+
+    Notes
+    -----
+    If a is a complex matrix, the transpose-conjugate of q is
+    used in place of q.T.
+
+    """
+
+    a1 = asarray_chkfinite(a)
+    if len(a1.shape) != 2:
+        raise ValueError("Expected 2-D array, but %s-D array was given"
+                         % len(a1.shape))
+
+    M, N = a1.shape
+    overwrite_a = overwrite_a or (_datanotshared(a1, a))
+
+    if find_best_lapack_type((a1,))[0] in ('s', 'd'):
+        geqrf, ormqr= get_lapack_funcs(('geqrf', 'ormqr'), (a1,))
+    else:
+        geqrf, ormqr= get_lapack_funcs(('geqrf', 'unmqr'), (a1,))
+
+    if lwork is None or lwork == -1:
+        # get optimal work array
+        qr, tau, work, info = geqrf(a1, lwork=-1, overwrite_a=1)
+        lwork = work[0]
+
+    qr, tau, work, info = geqrf(a1, lwork=lwork, overwrite_a=overwrite_a)
+    if info < 0:
+        raise ValueError("illegal value in %d-th argument of internal geqrf"
+                         % -info)
+
+    if mode == 'economic':
+        K = min(M, N)
+    else:
+        K = M
+
+    # get optimal work array
+    c, work, info = ormqr(qr[:, :K], tau, b, lwork=-1)
+    lwork = work[0]
+    c, work, info = ormqr(qr[:, :K], tau, b, lwork=lwork, side=0, trans=1,
+                          overwrite_b=overwrite_b)
+
+    if info < 0:
+        raise ValueError("illegal value in %d-th argument of internal gorgqr"
+                                                                    % -info)
+    return c[:K]

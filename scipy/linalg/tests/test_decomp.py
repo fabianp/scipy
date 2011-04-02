@@ -1039,6 +1039,51 @@ class TestRQ(TestCase):
             assert_equal(q.shape, (m, n))
             assert_equal(r.shape, (m, m))
 
+class TestQRMul(TestCase):
+    """Test function qr_mul
+    
+    These tests compare qr_mul against the explicit multiplication
+    """
+    
+    def test_simple(self):
+        a = [[8,2,3],[2,9,3],[5,3,6]]
+        b = [[3,2,1],[5,2,1],[3,3,0]]
+        q, r = qr(a)
+        c1 = qr_mul(a, b)
+        c2 = dot(q.T, b)
+        assert_array_almost_equal(c1, c2)
+
+    def test_simple_complex(self):
+        a = [[3,3+4j,5],[5,2,2+7j],[3,2,7]]
+        b = [[3,3+4j,5],[5,2,2+7j],[3,2,7]]
+        q, r = qr(a)
+        c1 = qr_mul(a, b)
+        c2 = dot(q.conjugate().T, b)
+        assert_array_almost_equal(c1, c2)
+
+    def test_random_tall(self):
+        m = 200
+        n = 100
+        for mode in ('full', 'economic'):
+            a = random([m, n])
+            b = random([m, n+m])
+            q, r = qr(a, mode=mode)
+            c1 = qr_mul(a, b, mode=mode)
+            c2 = dot(q.T, b)
+            assert_array_almost_equal(c1, c2)
+
+    def test_random_trap(self):
+        m = 100
+        n = 200
+        for mode in ('full', 'economic'):
+            a = random([m, n])
+            b = random([m, n])
+            q, r = qr(a, mode=mode)
+            c1 = qr_mul(a, b, mode=mode)
+            c2 = dot(q.T, b)
+            assert_array_almost_equal(c1, c2)
+
+
 transp = transpose
 any = sometrue
 
