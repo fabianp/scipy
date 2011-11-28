@@ -14,6 +14,8 @@ python module flapack
 interface
 
    include 'flapack_user.pyf.src'
+   
+   subroutine <prefix>gecon(norm, n, a, lda, anorm, rcond, work, iwork, info)
 
    subroutine <prefix2>pbtrf(lower,n,kd,ab,ldab,info)
    

@@ -546,3 +546,19 @@ def pinv2(a, cond=None, rcond=None):
             psigma[i,i] = 1.0/np.conjugate(s[i])
     #XXX: use lapack/blas routines for dot
     return np.transpose(np.conjugate(np.dot(np.dot(u,psigma),vh)))
+
+def cond(a, ord=2):
+    """Compute the condition number of a matrix
+
+    The condition number of a matrix represents the sensitivity 
+
+    Parameters
+    ----------
+    ord : {1, 2, inf}
+    """
+    
+    if ord == 2:
+        s = decomp_svd.svdvals(a)
+        return s[0] / s[-1]
+    else:
+        raise NotImplementedError
